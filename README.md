@@ -157,7 +157,6 @@ Parent marks iframe as ready
 Parent flushes queued messages
 ↓
 Normal communication begins
-
+```
 
 > Iframe communication is asynchronous and can suffer from race conditions if messages are sent before listeners are attached. We solve this using a handshake protocol where the iframe sends a READY signal and the parent queues messages until readiness is confirmed.
-```

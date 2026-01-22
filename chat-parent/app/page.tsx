@@ -1,10 +1,37 @@
 "use client";
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const Home = () => {
+  const iframeREF = useRef<HTMLIFrameElement>(null);
+  const messageQueue = useRef<any[]>([]);
+  const [isIframeReady, setIsIframeReady] = useState(false);
+
+  const now = () => new Date().toLocaleTimeString();
+
   useEffect(() => {
     const handler = (event: MessageEvent) => {
-      console.log("👨‍💻 Parent received:", event.data);
+      if (event.data?.type === "IFRAME_READY") {
+        console.log(`[${now()}] ✅ Parent received IFRAME_READY`);
+        setIsIframeReady(true);
+
+        console.log(
+          `[${now()}] 🔁 Flushing ${
+            messageQueue.current.length
+          } queued messages`
+        );
+
+        //Flush the queued message
+        messageQueue.current.forEach((msg) => {
+          console.log(`[${now()}] 🚀 Sending queued message`, msg);
+          iframeREF.current?.contentWindow?.postMessage(
+            msg,
+            "http://localhost:3001"
+          );
+        });
+        messageQueue.current = [];
+        return;
+      }
+      console.log(`[${now()}] 👨‍💻 Parent received:`, event.data);
     };
 
     window.addEventListener("message", handler);
@@ -12,7 +39,8 @@ const Home = () => {
   }, []);
 
   const sendMessage = () => {
-    const iframe = document.getElementById("chat-iframe") as HTMLIFrameElement;
+    //const iframe = document.getElementById("chat-iframe") as HTMLIFrameElement;
+
     //You are not allowed to inspect this window - because it belongs to different origin.
     //You are allowed to reference a cross-origin window,
     //but NOT allowed to inspect it.
@@ -20,13 +48,22 @@ const Home = () => {
 
     //postMessage(data,targetOrigin)
     //Because postMessage is a special safe API designed for cross-origin communication.
-    iframe?.contentWindow?.postMessage(
-      {
-        type: "SEND_MESSAGE",
-        payload: {
-          text: "Hello from parent 👋🏻",
-        },
+    const message = {
+      type: "SEND_MESSAGE",
+      payload: {
+        text: `Hello from parent 👋🏻 ${new Date()}`,
+        sentAt: now(),
       },
+    };
+
+    if (!isIframeReady) {
+      console.log(`[${now()}] ⏳ Iframe not ready → queueing message`);
+      messageQueue.current.push(message);
+      return;
+    }
+
+    iframeREF?.current?.contentWindow?.postMessage(
+      message,
       "http://localhost:3001" //targetOrigin
     );
   };
@@ -85,6 +122,7 @@ const Home = () => {
         </div>
 
         <iframe
+          ref={iframeREF}
           id="chat-iframe"
           src="http://localhost:3001/chat.html"
           style={{

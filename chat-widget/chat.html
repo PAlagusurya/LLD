@@ -10,8 +10,21 @@
 
     <div id="messages"></div>
     <script>
+      const ALLOWED_ORIGINS = ["http://localhost:3000"];
+
+      const now = () => new Date().toLocaleTimeString();
+
       window.addEventListener("message", (event) => {
-        console.log("📩 Iframe received:", event.data);
+        if (event.origin === window.location.origin) {
+          return;
+        }
+
+        if (!ALLOWED_ORIGINS.includes(event.origin)) {
+          console.warn(`[${now()}] ❌ Blocked message from:`, event.origin);
+          return;
+        }
+
+        console.log(`[${now()}] 📩 Iframe received:`, event.data);
 
         if (event.data.type === "SEND_MESSAGE") {
           const messagesDiv = document.getElementById("messages");
@@ -28,6 +41,23 @@
           );
         }
       });
+
+      console.log(`[${now()}] ⏳ Iframe loading...`);
+
+      setTimeout(() => {
+        console.log(`[${now()}] ✅ Iframe READY`);
+        window.parent.postMessage({ type: "IFRAME_READY", time: now() }, "*");
+      }, 5000);
+
+      //window.parent is a reference to the window that embedded the iframe
+      //window.parent.postMessage(
+      //Send a message to the window that contains me.
+      //  {
+      //    type: "IFRAME_READY",
+      // },
+      // Send this message to ANY origin
+      //("*");
+      // );
     </script>
   </body>
 </html>

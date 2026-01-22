@@ -133,18 +133,31 @@ const ALLOWED_ORIGINS = ["http://localhost:3000"];
 
 # LEVEL 2 — Handshake & Race Conditions (MOST IMPORTANT)
 
-## HANDSHAKE FLOW
+### Handshake Flow (Accurate)
 
-Iframe loads
+```text
+Parent mounts
 ↓
-Iframe attaches message listener
+Parent attaches message listener (useEffect)
 ↓
-Iframe sends IFRAME_READY
+Iframe starts loading
 ↓
-Parent receives READY
+Iframe attaches its message listener
+↓
+Iframe sends IFRAME_READY (async postMessage)
+↓
+READY event is in transit
+↓
+User actions may occur → messages are queued
+↓
+Parent receives IFRAME_READY
+↓
+Parent marks iframe as ready
 ↓
 Parent flushes queued messages
 ↓
-Normal communication starts
+Normal communication begins
+
 
 > Iframe communication is asynchronous and can suffer from race conditions if messages are sent before listeners are attached. We solve this using a handshake protocol where the iframe sends a READY signal and the parent queues messages until readiness is confirmed.
+```

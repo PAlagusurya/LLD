@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Chat widget</title>
+  </head>
+  <body>
+    <h3>💬 Chat Widget</h3>
+
+    <div id="messages"></div>
+    <script>
+      window.addEventListener("message", (event) => {
+        console.log("📩 Iframe received:", event.data);
+
+        if (event.data.type === "SEND_MESSAGE") {
+          const messagesDiv = document.getElementById("messages");
+
+          messagesDiv.innerHTML += `
+            <p>${event.data.payload.text}</p>`;
+
+          event.source.postMessage(
+            {
+              type: "MESSAGE_RECEIVED",
+              payload: { status: "OK" },
+            },
+            event.origin
+          );
+        }
+      });
+    </script>
+  </body>
+</html>
